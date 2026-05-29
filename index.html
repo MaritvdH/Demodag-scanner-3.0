@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<title>Barcode Scanner</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial;
+    background: black;
+    overflow: hidden;
+  }
+
+  video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+
+  #overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    font-weight: 900;
+    color: white;
+
+    background: rgba(0, 200, 0, 0.38);
+
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+
+  #text {
+    font-size: 110px;
+    line-height: 1.0;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+
+<body>
+
+<video id="video"></video>
+
+<div id="overlay">
+  <div id="text">
+    WELKOM<br>AAN BOORD
+  </div>
+</div>
+
+<audio id="beep"></audio>
+
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const beep = document.getElementById('beep');
+
+let scanning = true;
+
+// 🔊 Boarding-pass scanner sound (synthetic beep)
+function playScannerBeep() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContext();
+
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(1200, ctx.currentTime); // hoog piepje
+
+  gain.gain.setValueAtTime(0.2, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+
+  oscillator.start();
+  oscillator.stop(ctx.currentTime + 0.2);
+}
+
+function showWelcome() {
+  overlay.style.opacity = 1;
+
+  // geluid + trilling
+  playScannerBeep();
+  if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
+
+  scanning = false;
+
+  setTimeout(() => {
+    overlay.style.opacity = 0;
+    scanning = true;
+  }, 2000);
+}
+
+const codeReader = new ZXing.BrowserMultiFormatReader();
+
+codeReader.listVideoInputDevices()
+  .then((devices) => {
+    const deviceId = devices[0].deviceId;
+
+    codeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+      if (result && scanning) {
+        console.log(result.getText());
+        showWelcome();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
