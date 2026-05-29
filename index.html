@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<title>Barcode Scanner</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial;
+    background: black;
+    overflow: hidden;
+  }
+
+  video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+
+  #overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    color: white;
+    background: rgba(0,0,0,0.6);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+</style>
+</head>
+
+<body>
+
+<video id="video"></video>
+<div id="overlay">Welkom aan boord</div>
+
+<audio id="sound">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
+
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const sound = document.getElementById('sound');
+
+let scanning = true;
+
+function showWelcome() {
+  overlay.style.opacity = 1;
+
+  sound.play();
+  if (navigator.vibrate) navigator.vibrate(200);
+
+  scanning = false;
+
+  setTimeout(() => {
+    overlay.style.opacity = 0;
+    scanning = true;
+  }, 2000);
+}
+
+const codeReader = new ZXing.BrowserMultiFormatReader();
+
+codeReader.listVideoInputDevices()
+  .then((videoInputDevices) => {
+    const firstDeviceId = videoInputDevices[0].deviceId;
+
+    codeReader.decodeFromVideoDevice(firstDeviceId, video, (result, err) => {
+      if (result && scanning) {
+        console.log(result.getText());
+        showWelcome();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
