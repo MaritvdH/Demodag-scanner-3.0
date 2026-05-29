@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Boarding Scanner</title>
+
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+<style>
+body {
+    margin: 0;
+    background: black;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+}
+
+#success {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 150, 0, 0.95);
+    color: white;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 3rem;
+    font-weight: bold;
+    z-index: 10;
+}
+
+</style>
+</head>
+
+<body>
+
+<video id="video"></video>
+
+<div id="success">
+    ✈️<br>
+    Welkom aan boord
+</div>
+
+<audio id="beep">
+    <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+</audio>
+
+<script>
+
+const video = document.getElementById('video');
+const successScreen = document.getElementById('success');
+const beep = document.getElementById('beep');
+
+let scanning = true;
+
+const codeReader = new ZXing.BrowserMultiFormatReader();
+
+async function startScanner() {
+
+    const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+
+    const selectedDeviceId = devices[0].deviceId;
+
+    codeReader.decodeFromVideoDevice(
+        selectedDeviceId,
+        'video',
+        (result, err) => {
+
+            if (result && scanning) {
+
+                scanning = false;
+
+                console.log(result.text);
+
+                // geluid
+                beep.play();
+
+                // trillen
+                if (navigator.vibrate) {
+                    navigator.vibrate(300);
+                }
+
+                // scherm tonen
+                successScreen.style.display = "flex";
+
+                // reset na 2 sec
+                setTimeout(() => {
+                    successScreen.style.display = "none";
+                    scanning = true;
+                }, 2000);
+            }
+        }
+    );
+}
+
+startScanner();
+
+</script>
+
+</body>
+</html>
